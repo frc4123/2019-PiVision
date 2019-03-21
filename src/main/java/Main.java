@@ -73,279 +73,298 @@ import org.opencv.core.Mat;
  */
 
 public final class Main {
-  private static String configFile = "/boot/frc.json";
+    private static String configFile = "/boot/frc.json";
 
-  @SuppressWarnings("MemberName")
-  public static class CameraConfig {
-    public String name;
-    public String path;
-    public JsonObject config;
-    public JsonElement streamConfig;
-  }
-
-  @SuppressWarnings("MemberName")
-  public static class SwitchedCameraConfig {
-    public String name;
-    public String key;
-  };
-
-  public static int team;
-  public static boolean server;
-  public static List<CameraConfig> cameraConfigs = new ArrayList<>();
-  public static List<SwitchedCameraConfig> switchedCameraConfigs = new ArrayList<>();
-  public static List<VideoSource> cameras = new ArrayList<>();
-
-  private Main() {
-  }
-
-  /**
-   * Report parse error.
-   */
-  public static void parseError(String str) {
-    System.err.println("config error in '" + configFile + "': " + str);
-  }
-
-  /**
-   * Read single camera configuration.
-   */
-  public static boolean readCameraConfig(JsonObject config) {
-    CameraConfig cam = new CameraConfig();
-
-    // name
-    JsonElement nameElement = config.get("name");
-    if (nameElement == null) {
-      parseError("could not read camera name");
-      return false;
-    }
-    cam.name = nameElement.getAsString();
-
-    // path
-    JsonElement pathElement = config.get("path");
-    if (pathElement == null) {
-      parseError("camera '" + cam.name + "': could not read path");
-      return false;
-    }
-    cam.path = pathElement.getAsString();
-
-    // stream properties
-    cam.streamConfig = config.get("stream");
-
-    cam.config = config;
-
-    cameraConfigs.add(cam);
-    return true;
-  }
-
-  /**
-   * Read single switched camera configuration.
-   */
-  public static boolean readSwitchedCameraConfig(JsonObject config) {
-    SwitchedCameraConfig cam = new SwitchedCameraConfig();
-
-    // name
-    JsonElement nameElement = config.get("name");
-    if (nameElement == null) {
-      parseError("could not read switched camera name");
-      return false;
-    }
-    cam.name = nameElement.getAsString();
-
-    // path
-    JsonElement keyElement = config.get("key");
-    if (keyElement == null) {
-      parseError("switched camera '" + cam.name + "': could not read key");
-      return false;
-    }
-    cam.key = keyElement.getAsString();
-
-    switchedCameraConfigs.add(cam);
-    return true;
-  }
-
-  /**
-   * Read configuration file.
-   */
-  @SuppressWarnings("PMD.CyclomaticComplexity")
-  public static boolean readConfig() {
-    // parse file
-    JsonElement top;
-    try {
-      top = new JsonParser().parse(Files.newBufferedReader(Paths.get(configFile)));
-    } catch (IOException ex) {
-      System.err.println("could not open '" + configFile + "': " + ex);
-      return false;
+    @SuppressWarnings("MemberName")
+    public static class CameraConfig {
+        public String name;
+        public String path;
+        public JsonObject config;
+        public JsonElement streamConfig;
     }
 
-    // top level must be an object
-    if (!top.isJsonObject()) {
-      parseError("must be JSON object");
-      return false;
-    }
-    JsonObject obj = top.getAsJsonObject();
-
-    // team number
-    JsonElement teamElement = obj.get("team");
-    if (teamElement == null) {
-      parseError("could not read team number");
-      return false;
-    }
-    team = teamElement.getAsInt();
-
-    // ntmode (optional)
-    if (obj.has("ntmode")) {
-      String str = obj.get("ntmode").getAsString();
-      if ("client".equalsIgnoreCase(str)) {
-        server = false;
-      } else if ("server".equalsIgnoreCase(str)) {
-        server = true;
-      } else {
-        parseError("could not understand ntmode value '" + str + "'");
-      }
+    @SuppressWarnings("MemberName")
+    public static class SwitchedCameraConfig {
+        public String name;
+        public String key;
     }
 
-    // cameras
-    JsonElement camerasElement = obj.get("cameras");
-    if (camerasElement == null) {
-      parseError("could not read cameras");
-      return false;
-    }
-    JsonArray cameras = camerasElement.getAsJsonArray();
-    for (JsonElement camera : cameras) {
-      if (!readCameraConfig(camera.getAsJsonObject())) {
-        return false;
-      }
+    ;
+
+    public static int team;
+    public static boolean server;
+    public static List<CameraConfig> cameraConfigs = new ArrayList<>();
+    public static List<SwitchedCameraConfig> switchedCameraConfigs = new ArrayList<>();
+    public static List<VideoSource> cameras = new ArrayList<>();
+
+    private Main() {
     }
 
-    if (obj.has("switched cameras")) {
-      JsonArray switchedCameras = obj.get("switched cameras").getAsJsonArray();
-      for (JsonElement camera : switchedCameras) {
-        if (!readSwitchedCameraConfig(camera.getAsJsonObject())) {
-          return false;
+    /**
+     * Report parse error.
+     */
+    public static void parseError(String str) {
+        System.err.println("config error in '" + configFile + "': " + str);
+    }
+
+    /**
+     * Read single camera configuration.
+     */
+    public static boolean readCameraConfig(JsonObject config) {
+        CameraConfig cam = new CameraConfig();
+
+        // name
+        JsonElement nameElement = config.get("name");
+        if (nameElement == null) {
+            parseError("could not read camera name");
+            return false;
         }
-      }
+        cam.name = nameElement.getAsString();
+
+        // path
+        JsonElement pathElement = config.get("path");
+        if (pathElement == null) {
+            parseError("camera '" + cam.name + "': could not read path");
+            return false;
+        }
+        cam.path = pathElement.getAsString();
+
+        // stream properties
+        cam.streamConfig = config.get("stream");
+
+        cam.config = config;
+
+        cameraConfigs.add(cam);
+        return true;
     }
 
-    return true;
-  }
+    /**
+     * Read single switched camera configuration.
+     */
+    public static boolean readSwitchedCameraConfig(JsonObject config) {
+        SwitchedCameraConfig cam = new SwitchedCameraConfig();
 
-  /**
-   * Start running the camera.
-   */
-  public static VideoSource startCamera(CameraConfig config) {
-    System.out.println("Starting camera '" + config.name + "' on " + config.path);
-    CameraServer inst = CameraServer.getInstance();
-    UsbCamera camera = new UsbCamera(config.name, config.path);
-    MjpegServer server = inst.startAutomaticCapture(camera);
+        // name
+        JsonElement nameElement = config.get("name");
+        if (nameElement == null) {
+            parseError("could not read switched camera name");
+            return false;
+        }
+        cam.name = nameElement.getAsString();
 
-    Gson gson = new GsonBuilder().create();
+        // path
+        JsonElement keyElement = config.get("key");
+        if (keyElement == null) {
+            parseError("switched camera '" + cam.name + "': could not read key");
+            return false;
+        }
+        cam.key = keyElement.getAsString();
 
-    camera.setConfigJson(gson.toJson(config.config));
-    camera.setConnectionStrategy(VideoSource.ConnectionStrategy.kKeepOpen);
-
-    if (config.streamConfig != null) {
-      server.setConfigJson(gson.toJson(config.streamConfig));
+        switchedCameraConfigs.add(cam);
+        return true;
     }
 
-    return camera;
-  }
+    /**
+     * Read configuration file.
+     */
+    @SuppressWarnings("PMD.CyclomaticComplexity")
+    public static boolean readConfig() {
+        // parse file
+        JsonElement top;
+        try {
+            top = new JsonParser().parse(Files.newBufferedReader(Paths.get(configFile)));
+        } catch (IOException ex) {
+            System.err.println("could not open '" + configFile + "': " + ex);
+            return false;
+        }
 
-  /**
-   * Start running the switched camera.
-   */
-  public static MjpegServer startSwitchedCamera(SwitchedCameraConfig config) {
-    System.out.println("Starting switched camera '" + config.name + "' on " + config.key);
-    MjpegServer server = CameraServer.getInstance().addSwitchedCamera(config.name);
+        // top level must be an object
+        if (!top.isJsonObject()) {
+            parseError("must be JSON object");
+            return false;
+        }
+        JsonObject obj = top.getAsJsonObject();
 
-    NetworkTableInstance.getDefault()
-        .getEntry(config.key)
-        .addListener(event -> {
-              if (event.value.isDouble()) {
-                int i = (int) event.value.getDouble();
-                if (i >= 0 && i < cameras.size()) {
-                  server.setSource(cameras.get(i));
+        // team number
+        JsonElement teamElement = obj.get("team");
+        if (teamElement == null) {
+            parseError("could not read team number");
+            return false;
+        }
+        team = teamElement.getAsInt();
+
+        // ntmode (optional)
+        if (obj.has("ntmode")) {
+            String str = obj.get("ntmode").getAsString();
+            if ("client".equalsIgnoreCase(str)) {
+                server = false;
+            } else if ("server".equalsIgnoreCase(str)) {
+                server = true;
+            } else {
+                parseError("could not understand ntmode value '" + str + "'");
+            }
+        }
+
+        // cameras
+        JsonElement camerasElement = obj.get("cameras");
+        if (camerasElement == null) {
+            parseError("could not read cameras");
+            return false;
+        }
+        JsonArray cameras = camerasElement.getAsJsonArray();
+        for (JsonElement camera : cameras) {
+            if (!readCameraConfig(camera.getAsJsonObject())) {
+                return false;
+            }
+        }
+
+        if (obj.has("switched cameras")) {
+            JsonArray switchedCameras = obj.get("switched cameras").getAsJsonArray();
+            for (JsonElement camera : switchedCameras) {
+                if (!readSwitchedCameraConfig(camera.getAsJsonObject())) {
+                    return false;
                 }
-              } else if (event.value.isString()) {
-                String str = event.value.getString();
-                for (int i = 0; i < cameraConfigs.size(); i++) {
-                  if (str.equals(cameraConfigs.get(i).name)) {
-                    server.setSource(cameras.get(i));
-                    break;
-                  }
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Start running the camera.
+     */
+    public static VideoSource startCamera(CameraConfig config) {
+        System.out.println("Starting camera '" + config.name + "' on " + config.path);
+        CameraServer inst = CameraServer.getInstance();
+        UsbCamera camera = new UsbCamera(config.name, config.path);
+        MjpegServer server = inst.startAutomaticCapture(camera);
+
+        Gson gson = new GsonBuilder().create();
+
+        camera.setConfigJson(gson.toJson(config.config));
+        camera.setConnectionStrategy(VideoSource.ConnectionStrategy.kKeepOpen);
+
+        if (config.streamConfig != null) {
+            server.setConfigJson(gson.toJson(config.streamConfig));
+        }
+
+        return camera;
+    }
+
+    /**
+     * Start running the switched camera.
+     */
+    public static MjpegServer startSwitchedCamera(SwitchedCameraConfig config) {
+        System.out.println("Starting switched camera '" + config.name + "' on " + config.key);
+        MjpegServer server = CameraServer.getInstance().addSwitchedCamera(config.name);
+
+        NetworkTableInstance.getDefault()
+                .getEntry(config.key)
+                .addListener(event -> {
+                            if (event.value.isDouble()) {
+                                int i = (int) event.value.getDouble();
+                                if (i >= 0 && i < cameras.size()) {
+                                    server.setSource(cameras.get(i));
+                                }
+                            } else if (event.value.isString()) {
+                                String str = event.value.getString();
+                                for (int i = 0; i < cameraConfigs.size(); i++) {
+                                    if (str.equals(cameraConfigs.get(i).name)) {
+                                        server.setSource(cameras.get(i));
+                                        break;
+                                    }
+                                }
+                            }
+                        },
+                        EntryListenerFlags.kImmediate | EntryListenerFlags.kNew | EntryListenerFlags.kUpdate);
+
+        return server;
+    }
+
+    /**
+     * Example pipeline.
+     */
+    public static class MyPipeline implements VisionPipeline {
+        public int val;
+
+        @Override
+        public void process(Mat mat) {
+            val += 1;
+        }
+    }
+
+    /**
+     * Main.
+     */
+    public static void main(String... args) {
+        if (args.length > 0) {
+            configFile = args[0];
+        }
+
+        // read configuration
+        if (!readConfig()) {
+            return;
+        }
+
+        // start NetworkTables
+        NetworkTableInstance ntinst = NetworkTableInstance.getDefault();
+        if (server) {
+            System.out.println("Setting up NetworkTables server");
+            ntinst.startServer();
+        } else {
+            System.out.println("Setting up NetworkTables client for team " + team);
+            ntinst.startClientTeam(team);
+        }
+
+        // start cameras
+        for (CameraConfig config : cameraConfigs) {
+            cameras.add(startCamera(config));
+        }
+
+        // start switched cameras
+        for (SwitchedCameraConfig config : switchedCameraConfigs) {
+            startSwitchedCamera(config);
+        }
+
+        // start image processing on camera 0 if present
+        if (cameras.size() >= 1) {
+            VisionThread visionThread = new VisionThread(cameras.get(0),
+                    new CargoPipelineDeux(), pipeline -> {
+                // do something with pipeline results
+                if (!pipeline.filterContoursOutput().isEmpty()) {
+
+                    // Convert detected contours to a Target object.
+                    // There will only be one Goal/Target visible at a time in this
+                    // game, so we'll pass all contours to our Target and let it
+                    // figure out which are relevant.
+                    ArrayList<Rect> rects = new ArrayList<>();
+                    for (MatOfPoint point : pipeline.filterContoursOutput()) {
+                        rects.add(Imgproc.boundingRect(point));
+                    }
                 }
-              }
-            },
-            EntryListenerFlags.kImmediate | EntryListenerFlags.kNew | EntryListenerFlags.kUpdate);
+                // Remove all but the largest two rectangles; in the event that
+                // an erroneous Rect gets in, we don't want it to be included in
+                // our final Target
+                Target.filterRects(rects);
 
-    return server;
-  }
 
-  /**
-   * Example pipeline.
-   */
-  public static class MyPipeline implements VisionPipeline {
-    public int val;
-
-    @Override
-    public void process(Mat mat) {
-      val += 1;
-    }
-  }
-
-  /**
-   * Main.
-   */
-  public static void main(String... args) {
-    if (args.length > 0) {
-      configFile = args[0];
-    }
-
-    // read configuration
-    if (!readConfig()) {
-      return;
-    }
-
-    // start NetworkTables
-    NetworkTableInstance ntinst = NetworkTableInstance.getDefault();
-    if (server) {
-      System.out.println("Setting up NetworkTables server");
-      ntinst.startServer();
-    } else {
-      System.out.println("Setting up NetworkTables client for team " + team);
-      ntinst.startClientTeam(team);
-    }
-
-    // start cameras
-    for (CameraConfig config : cameraConfigs) {
-      cameras.add(startCamera(config));
-    }
-
-    // start switched cameras
-    for (SwitchedCameraConfig config : switchedCameraConfigs) {
-      startSwitchedCamera(config);
-    }
-
-    // start image processing on camera 0 if present
-    if (cameras.size() >= 1) {
-      VisionThread visionThread = new VisionThread(cameras.get(0),
-              new MyPipeline(), pipeline -> {
-        // do something with pipeline results
-      });
+            });
       /* something like this for GRIP:
       VisionThread visionThread = new VisionThread(cameras.get(0),
               new GripPipeline(), pipeline -> {
         ...
       });
        */
-      visionThread.start();
-    }
+            visionThread.start();
+        }
 
-    // loop forever
-    for (;;) {
-      try {
-        Thread.sleep(10000);
-      } catch (InterruptedException ex) {
-        return;
-      }
+        // loop forever
+        for (; ; ) {
+            try {
+                Thread.sleep(10000);
+            } catch (InterruptedException ex) {
+                return;
+            }
+        }
     }
-  }
 }
