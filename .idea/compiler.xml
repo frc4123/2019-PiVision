@@ -2,8 +2,8 @@
 <project version="4">
   <component name="CompilerConfiguration">
     <bytecodeTargetLevel>
-      <module name="java-multiCameraServer.main" target="1.8" />
-      <module name="java-multiCameraServer.test" target="1.8" />
+      <module name="2019-PiVision.main" target="11" />
+      <module name="2019-PiVision.test" target="11" />
     </bytecodeTargetLevel>
   </component>
 </project>

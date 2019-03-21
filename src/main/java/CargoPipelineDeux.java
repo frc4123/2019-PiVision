@@ -1,3 +1,5 @@
+
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -7,6 +9,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.HashMap;
 
+import edu.wpi.first.vision.VisionPipeline;
 import org.opencv.core.*;
 import org.opencv.core.Core.*;
 import org.opencv.features2d.FeatureDetector;
@@ -21,7 +24,7 @@ import org.opencv.objdetect.*;
 *
 * @author GRIP
 */
-public class CargoPipelineDeux {
+public class CargoPipelineDeux implements VisionPipeline {
 
 	//Outputs
 	private Mat blurOutput = new Mat();

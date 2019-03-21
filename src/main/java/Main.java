@@ -23,11 +23,16 @@ import edu.wpi.cscore.UsbCamera;
 import edu.wpi.cscore.VideoSource;
 import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.networktables.EntryListenerFlags;
+import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.vision.VisionPipeline;
 import edu.wpi.first.vision.VisionThread;
 
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfPoint;
+import org.opencv.core.Rect;
+import org.opencv.imgproc.Imgproc;
 
 /*
    JSON format:
@@ -74,6 +79,10 @@ import org.opencv.core.Mat;
 
 public final class Main {
     private static String configFile = "/boot/frc.json";
+
+    private static Target target = new Target();
+    private static double outputAngle = 0;
+
 
     @SuppressWarnings("MemberName")
     public static class CameraConfig {
@@ -326,11 +335,24 @@ public final class Main {
             startSwitchedCamera(config);
         }
 
+
+//        // Interface methods
+//        public Target getTarget() {
+//            return target;
+//        }
+
+
         // start image processing on camera 0 if present
         if (cameras.size() >= 1) {
             VisionThread visionThread = new VisionThread(cameras.get(0),
                     new CargoPipelineDeux(), pipeline -> {
                 // do something with pipeline results
+
+                NetworkTable table = ntinst.getTable("visionData");
+                NetworkTableEntry outHorizAngle = table.getEntry("horizAngle");
+                NetworkTableEntry targetsFound = table.getEntry("targetsFound");
+
+
                 if (!pipeline.filterContoursOutput().isEmpty()) {
 
                     // Convert detected contours to a Target object.
@@ -341,12 +363,26 @@ public final class Main {
                     for (MatOfPoint point : pipeline.filterContoursOutput()) {
                         rects.add(Imgproc.boundingRect(point));
                     }
-                }
-                // Remove all but the largest two rectangles; in the event that
-                // an erroneous Rect gets in, we don't want it to be included in
-                // our final Target
-                Target.filterRects(rects);
 
+                    // Remove all but the largest two rectangles; in the event that
+                    // an erroneous Rect gets in, we don't want it to be included in
+                    // our final Target
+                    Target.filterRects(rects);
+
+                    target.set(rects);
+
+                    outputAngle = target.getDegreesToTarget();
+                    targetsFound.setBoolean(true);
+
+                } else {
+
+                    outputAngle = 0; //Do nothing if no target found
+                    targetsFound.setBoolean(false);
+
+                }
+
+                System.out.println(outputAngle);
+                outHorizAngle.setDouble(outputAngle);
 
             });
       /* something like this for GRIP:

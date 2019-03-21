@@ -2,9 +2,9 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/java-multiCameraServer.iml" filepath="$PROJECT_DIR$/java-multiCameraServer.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/java-multiCameraServer.main.iml" filepath="$PROJECT_DIR$/.idea/modules/java-multiCameraServer.main.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/java-multiCameraServer.test.iml" filepath="$PROJECT_DIR$/.idea/modules/java-multiCameraServer.test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/2019-PiVision.iml" filepath="$PROJECT_DIR$/.idea/2019-PiVision.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/2019-PiVision.main.iml" filepath="$PROJECT_DIR$/.idea/modules/2019-PiVision.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/2019-PiVision.test.iml" filepath="$PROJECT_DIR$/.idea/modules/2019-PiVision.test.iml" />
     </modules>
   </component>
 </project>
