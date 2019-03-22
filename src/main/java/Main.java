@@ -253,6 +253,7 @@ public final class Main {
         camera.setConfigJson(gson.toJson(config.config));
         camera.setConnectionStrategy(VideoSource.ConnectionStrategy.kKeepOpen);
 
+
         if (config.streamConfig != null) {
             server.setConfigJson(gson.toJson(config.streamConfig));
         }
@@ -317,6 +318,7 @@ public final class Main {
 
         // start NetworkTables
         NetworkTableInstance ntinst = NetworkTableInstance.getDefault();
+
         if (server) {
             System.out.println("Setting up NetworkTables server");
             ntinst.startServer();
@@ -353,6 +355,7 @@ public final class Main {
                 NetworkTableEntry targetsFound = table.getEntry("targetsFound");
 
 
+
                 if (!pipeline.filterContoursOutput().isEmpty()) {
 
                     // Convert detected contours to a Target object.
@@ -367,7 +370,7 @@ public final class Main {
                     // Remove all but the largest two rectangles; in the event that
                     // an erroneous Rect gets in, we don't want it to be included in
                     // our final Target
-                    Target.filterRects(rects);
+//                    Target.filterRects(rects);
 
                     target.set(rects);
 

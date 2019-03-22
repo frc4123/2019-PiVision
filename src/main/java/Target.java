@@ -35,9 +35,8 @@ public class Target extends Rect {
      * Stores x, y, width, and height of a rectangle that contains all
      * rectangles in the ArrayList
      *
-     * @param rects
-     *            A list of Rects that will be used to determine the GoalType
-     *            and create the Target
+     * @param rects A list of Rects that will be used to determine the GoalType
+     *              and create the Target
      */
     public void set(ArrayList<Rect> rects) {
 
@@ -45,7 +44,12 @@ public class Target extends Rect {
         goalType = determineGoalType(rects);
 
         // Set this to a rectangle that contains all visible remaining targets
-        union(rects, this);
+        if (rects.size() == 2) {
+            union(rects, this);
+        } else {
+            System.out.println("Too many/too few contours");
+        }
+
     }
 
     /**
@@ -65,7 +69,7 @@ public class Target extends Rect {
         // Remove everything after and including index 2
         try {
             rects.subList(2, rects.size()).clear();
-        } catch (IllegalArgumentException e){
+        } catch (IllegalArgumentException e) {
             //If the list is < 2 in size, we can't sublist a list of 2
             e.printStackTrace();
         }
@@ -139,10 +143,10 @@ public class Target extends Rect {
         return this.y + (this.height / 2);
     }
 
-    public double getDegreesToTarget(){
+    public double getDegreesToTarget() {
         double radians = Math.atan((getCenterX() - (Constants.cameraWidth / 2)) / Constants.cameraFocalLength);
         double degrees = Math.toDegrees(radians);
-        return degrees;
+        return degrees*-1; //Multiply by negative 1 because the camera is upside down
     }
 
     /**
